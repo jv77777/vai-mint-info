@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8'>
+    <title>VAI Repay info</title>
+    <script src='https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js'></script>
+</head>
+
+<style>
+    body {
+        font-family: Tahoma, sans-serif;
+        font-size: 13px;
+    }
+</style>
+
+<body>
+    <form>
+        <p>
+            <label>Wallet: <input type='text' id='walletAddr' size='40'/></label>
+            <button type='button' onclick='javascript:viewInfo()'>View</button>
+        </p>
+        <p>
+            <label>VAI minted amount: </label>
+            <label id="vaiMintedAmount"></label>
+        </p>
+        <p>
+            <label>VAI repay amount: </label>
+            <label id="vaiRepayAmount"></label>
+        </p>
+    </form>
+
+    <script type='text/javascript'>
+        async function viewInfo() {
+
+            const formatNum = (num) => {
+                let result = '';
+                let n = num / decimals;
+                if (n == 0) result = '0'
+                else if (n < 0.0001) result = '<0.0001'
+                else result = n.toFixed(4).toString();
+                return result;
+            }
+
+            const provider = new Web3.providers.HttpProvider('https://bsc-dataseed.binance.org');
+            const web3 = new Web3(provider);
+            const decimals = 10**18;
+            const vaiControllerAbi = [{'inputs':[{'internalType':'address','name':'account','type':'address'}],'name':'getVAIRepayAmount','outputs':[{'internalType':'uint256','name':'','type':'uint256'}],'stateMutability':'view','type':'function'}];
+            const unitrollerAbi = [{'inputs':[{'internalType':'address','name':'account','type':'address'}],'name':'mintedVAIs','outputs':[{'internalType':'uint256','name':'','type':'uint256'}],'stateMutability':'view','type':'function'}];
+
+            const vaiControllerAddr = '0x004065D34C6b18cE4370ced1CeBDE94865DbFAFE';
+            const unitrollerAddr = '0xfD36E2c2a6789Db23113685031d7F16329158384';
+            const walletAddr = document.getElementById('walletAddr').value;
+            let minted = 0;
+            let repay = 0;
+            try {
+                const unitrollerContract = new web3.eth.Contract(unitrollerAbi, unitrollerAddr);
+                const vaiControllerContract = new web3.eth.Contract(vaiControllerAbi, vaiControllerAddr);
+                minted = await unitrollerContract.methods.mintedVAIs(walletAddr).call();
+                repay = await vaiControllerContract.methods.getVAIRepayAmount(walletAddr).call();
+            } catch (err) { }
+            document.getElementById('vaiMintedAmount').innerText = formatNum(Number(minted))
+            document.getElementById('vaiRepayAmount').innerText = formatNum(Number(repay))
+        }
+    </script>
+</body>
+</html>
