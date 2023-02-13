@@ -9,7 +9,7 @@
 <style>
     body {
         font-family: Tahoma, sans-serif;
-        font-size: 13px;
+        font-size: 14px;
     }
 </style>
 
@@ -27,39 +27,55 @@
             <label>VAI repay amount: </label>
             <label id="vaiRepayAmount"></label>
         </p>
+        <p>
+            <label>Current VAI Repay rate: </label>
+            <label id="vaiRepayRate"></label>
+        </p>
+        <p>
+            <label>Current VAI price: </label>
+            <label id="vaiPrice"></label>
+        </p>
     </form>
 
     <script type='text/javascript'>
         async function viewInfo() {
 
-            const formatNum = (num) => {
+            const formatNum = (num, n = 4) => {
                 let result = '';
-                let n = num / decimals;
-                if (n == 0) result = '0'
-                else if (n < 0.0001) result = '<0.0001'
-                else result = n.toFixed(4).toString();
+                if (num == 0) result = '0'
+                else if (num < 0.0001) result = '<0.0001'
+                else result = num.toFixed(n).toString();
                 return result;
             }
 
             const provider = new Web3.providers.HttpProvider('https://bsc-dataseed.binance.org');
             const web3 = new Web3(provider);
             const decimals = 10**18;
-            const vaiControllerAbi = [{'inputs':[{'internalType':'address','name':'account','type':'address'}],'name':'getVAIRepayAmount','outputs':[{'internalType':'uint256','name':'','type':'uint256'}],'stateMutability':'view','type':'function'}];
+            const vaiControllerAbi = [{"constant":true,"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"getVAIRepayAmount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getVAIRepayRate","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}];
             const unitrollerAbi = [{'inputs':[{'internalType':'address','name':'account','type':'address'}],'name':'mintedVAIs','outputs':[{'internalType':'uint256','name':'','type':'uint256'}],'stateMutability':'view','type':'function'}];
+            const oracleAbi = [{"constant":true,"inputs":[{"internalType":"contract VToken","name":"vToken","type":"address"}],"name":"getUnderlyingPrice","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}];
 
             const vaiControllerAddr = '0x004065D34C6b18cE4370ced1CeBDE94865DbFAFE';
             const unitrollerAddr = '0xfD36E2c2a6789Db23113685031d7F16329158384';
+            const vaiTokenAddr = '0x4BD17003473389A42DAF6a0a729f6Fdb328BbBd7';
+            const oracleAddr = '0x7FabdD617200C9CB4dcf3dd2C41273e60552068A';
+            
             const walletAddr = document.getElementById('walletAddr').value;
             let minted = 0;
             let repay = 0;
             try {
                 const unitrollerContract = new web3.eth.Contract(unitrollerAbi, unitrollerAddr);
                 const vaiControllerContract = new web3.eth.Contract(vaiControllerAbi, vaiControllerAddr);
+                const oracleContract = new web3.eth.Contract(oracleAbi, oracleAddr);
                 minted = await unitrollerContract.methods.mintedVAIs(walletAddr).call();
                 repay = await vaiControllerContract.methods.getVAIRepayAmount(walletAddr).call();
+                repayRate = await vaiControllerContract.methods.getVAIRepayRate().call();
+                vaiPrice = await oracleContract.methods.getUnderlyingPrice(vaiTokenAddr).call();
             } catch (err) { }
-            document.getElementById('vaiMintedAmount').innerText = formatNum(Number(minted))
-            document.getElementById('vaiRepayAmount').innerText = formatNum(Number(repay))
+            document.getElementById('vaiMintedAmount').innerText = formatNum(Number(minted) / decimals)
+            document.getElementById('vaiRepayAmount').innerText = formatNum(Number(repay) / decimals)
+            document.getElementById('vaiRepayRate').innerText = formatNum(Number(repayRate) / decimals * 100, 2) + '%'
+            document.getElementById('vaiPrice').innerText = formatNum(Number(vaiPrice) / decimals)
         }
     </script>
 </body>
