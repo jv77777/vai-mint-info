@@ -28,6 +28,10 @@
             <label id="vaiRepayAmount"></label>
         </p>
         <p>
+            <label>VAI repay fee: </label>
+            <label id="vaiRepayFee"></label>
+        </p>
+        <p>
             <label>Current VAI Repay rate: </label>
             <label id="vaiRepayRate"></label>
         </p>
@@ -71,12 +75,11 @@
                 repayRate = await vaiControllerContract.methods.getVAIRepayRate().call();
                 vaiPrice = await oracleContract.methods.getUnderlyingPrice(vaiTokenAddr).call();
             } catch (err) { }
-            document.getElementById('vaiRepayRate').innerText = formatNum(Number(repayRate) / decimals * 100, 2) + '%'
-            document.getElementById('vaiPrice').innerText = formatNum(Number(vaiPrice) / decimals)
+            document.getElementById('vaiRepayRate').innerText = formatNum(Number(repayRate) / decimals * 100, 2) + '%';
+            document.getElementById('vaiPrice').innerText = formatNum(Number(vaiPrice) / decimals);
         }
 
         async function viewAddrInfo() {
-
             const walletAddr = document.getElementById('walletAddr').value;
             let minted = 0;
             let repay = 0;
@@ -84,9 +87,14 @@
                 minted = await unitrollerContract.methods.mintedVAIs(walletAddr).call();
                 repay = await vaiControllerContract.methods.getVAIRepayAmount(walletAddr).call();
             } catch (err) { }
-            document.getElementById('vaiMintedAmount').innerText = formatNum(Number(minted) / decimals)
-            document.getElementById('vaiRepayAmount').innerText = formatNum(Number(repay) / decimals)
+            let mintedAmount = Number(minted);
+            let repayAmount = Number(repay);
+            let repayFee = repayAmount / mintedAmount - 1;
+            document.getElementById('vaiMintedAmount').innerText = formatNum(mintedAmount / decimals);
+            document.getElementById('vaiRepayAmount').innerText = formatNum(repayAmount / decimals);
+            document.getElementById('vaiRepayFee').innerText = formatNum(repayFee * 100, 2) + '%';
         }
+
     </script>
 </body>
 </html>
